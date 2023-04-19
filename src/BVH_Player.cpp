@@ -16,7 +16,6 @@
 #include "defs.h"
 
 
-
 static const char* vertex_shader_text =
 "#version 110\n"
 "uniform mat4 MVP;\n"

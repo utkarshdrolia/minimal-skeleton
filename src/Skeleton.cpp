@@ -7,7 +7,7 @@
 
 Skeleton::Skeleton()
 {
-
+	m_linkCnt = 0;
 }
 Skeleton::~Skeleton()
 {

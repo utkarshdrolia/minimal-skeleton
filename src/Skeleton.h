@@ -48,7 +48,7 @@ private:
 //DO I NEED THIS?
 
 	//number of links in array
-	int m_linkCnt = 0;
+	int m_linkCnt;
 
 
 };

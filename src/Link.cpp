@@ -192,7 +192,23 @@ void Link::GetLToWTransMat(mat4x4 m)
 //based upon the state data
 void Link::UpdateAndRecurse(Skeleton* pSkel)
 {
-
+	// Calculate the local translation matrix from joint state data
+	mat4x4 parTM;
+	if (m_parNde) {
+		memcpy(parTM,m_parNde->m_LToWTrans, sizeof(float)*16);
+	} else {
+		MakeIdentity(parTM);
+	}
+	mat4x4 tm;
+	mat4x4_translate(tm, m_parTrans[0], m_parTrans[1], m_parTrans[2]);
+	MakeLinkRotMatrixLocal(tm);
+	mat4x4_mul(m_LToWTrans, parTM, tm);
+	for (int i = 0; i < KL_MAX_CHILDREN; i++) {
+		if (m_children[i])
+		{
+			m_children[i]->UpdateAndRecurse(pSkel);
+		}
+	}
 }
 
 
@@ -215,7 +231,7 @@ void Link::CalcVertexLocations(int maxEntries, int* curLocation, VERTEX** outCoo
 
 
 	mat4x4 tm;
-
+	GetLToWTransMat(tm);
 	//TO DO: figure out the correct transformation
 	
 
@@ -232,7 +248,12 @@ void Link::CalcVertexLocations(int maxEntries, int* curLocation, VERTEX** outCoo
 
 
 	//TO DO:  Add some more code...
-
+	for (int i = 0; i < KL_MAX_CHILDREN; i++) {
+		if (m_children[i])
+		{
+			m_children[i]->CalcVertexLocations(maxEntries, curLocation, outCoords);
+		}
+	}
 	
 }
 
@@ -333,6 +354,17 @@ void Link::TransformVERTEX(mat4x4 tm, VERTEX* vertIn, VERTEX* vertOut)
 {
 
 	//TO ADD
+	vec4 in, out;
+	in[0] = vertIn->x;
+	in[1] = vertIn->y;
+	in[2] = vertIn->z;
+	in[3] = 1.0;
+
+	mat4x4_mul_vec4(out, tm, in);
+
+	vertOut->x = out[0];
+	vertOut->y = out[1];
+	vertOut->z = out[2];
 
 }
 //maintains the rotation and normalizes the rest of the values to make the quat unit length
@@ -457,4 +489,21 @@ void Link::CalcQuatToAlignWithVector(float baseVec[], float targetVec[], float q
 void Link::MakeLinkRotMatrixLocal(mat4x4 rot)
 {
 	//To add
+	for(int i = 0; i < m_jointTypeToNumRotations[m_jointType]; i++) {
+		switch (m_axisOrder[i])
+		{
+		case 0:
+			mat4x4_rotate(rot, rot, 1.0f, 0.0f, 0.0f, m_dofValues[i]);
+			break;
+		case 1:
+			mat4x4_rotate(rot, rot, 0.0f, 1.0f, 0.0f, m_dofValues[i]);
+			break;
+		case 2:
+			mat4x4_rotate(rot, rot, 0.0f, 0.0f, 1.0f, m_dofValues[i]);
+			break;
+		
+		default:
+			break;
+		}
+	}
 }

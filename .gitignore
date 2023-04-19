@@ -1,0 +1,7 @@
+.vscode/
+build/
+Debug/
+include/
+lib/
+x64/
+Release/
