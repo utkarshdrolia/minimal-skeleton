@@ -195,17 +195,29 @@ void Link::UpdateAndRecurse(Skeleton* pSkel)
 	// Calculate the local translation matrix from joint state data
 	mat4x4 parTM;
 	if (m_parNde) {
-		memcpy(parTM,m_parNde->m_LToWTrans, sizeof(float)*16);
+		mat4x4_dup(parTM,m_parNde->m_LToWTrans);
 	} else {
-		MakeIdentity(parTM);
+		mat4x4_identity(parTM);
 	}
+	// Calculate local translation matrix
 	mat4x4 tm;
 	mat4x4_translate(tm, m_parTrans[0], m_parTrans[1], m_parTrans[2]);
-	MakeLinkRotMatrixLocal(tm);
+
+	// Calculate local rotation matrix
+	mat4x4 rot;
+	mat4x4_identity(rot);
+	MakeLinkRotMatrixLocal(rot);
+
+	//Multiply local translation and rotation matrices
+	mat4x4_mul(tm, tm, rot);
+
+	// Multiply local transformation matrix with parent Transaformation matrix
 	mat4x4_mul(m_LToWTrans, parTM, tm);
+
+	// Recurse over children
 	for (int i = 0; i < KL_MAX_CHILDREN; i++) {
 		if (m_children[i])
-		{
+		{	
 			m_children[i]->UpdateAndRecurse(pSkel);
 		}
 	}

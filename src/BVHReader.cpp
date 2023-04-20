@@ -356,7 +356,12 @@ void BVHReader::BuildSkelFromHeader(std::ifstream& file, Skeleton* newSkel, Anim
 				y = atof(str);
 				str = strtok(NULL, " \t");
 				z = atof(str);
-
+				
+				// curLink = new Link();
+				// Link* top = stack.top();
+				// newSkel->AddToSkeleton(curLink, top->GetName());
+				// curLink->SetJointType("weld");
+				// curLink->SetParTranslation(x, y, z);
 				//TO DO: add this into the representation so that the last link can be drawn
 				//					cur->setEndEffectorOffset(x, y, z);
 				//					cur->setEndEffector(true);
