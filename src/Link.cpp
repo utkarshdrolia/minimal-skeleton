@@ -194,32 +194,34 @@ void Link::UpdateAndRecurse(Skeleton* pSkel)
 {
 	// Calculate the local translation matrix from joint state data
 	mat4x4 parTM;
-	if (m_parNde) {
-		mat4x4_dup(parTM,m_parNde->m_LToWTrans);
-	} else {
+	if (m_parNde == NULL) {
 		mat4x4_identity(parTM);
+		mat4x4_translate(m_LToWTrans, m_parTrans[0], m_parTrans[1], m_parTrans[2]);
+	} else {
+		//Parent Transaltion in parTM
+		mat4x4_dup(parTM, m_parNde->m_LToWTrans);
+
+		// Calculate local translation matrix
+		mat4x4 localTranslationMat;
+		mat4x4_translate(localTranslationMat, m_parTrans[0], m_parTrans[1], m_parTrans[2]);
+
+		// Calculate local rotation matrix
+		mat4x4 localRotMat;
+		mat4x4_identity(localRotMat);
+		MakeLinkRotMatrixLocal(localRotMat);
+
+		//Multiply local translation and rotation matrices
+		mat4x4 transformationMatrix;
+		mat4x4_mul(transformationMatrix, localTranslationMat, localRotMat);
+
+		// Multiply local transformation matrix with parent Transaformation matrix
+		mat4x4_mul(m_LToWTrans, parTM, transformationMatrix);
 	}
-	// Calculate local translation matrix
-	mat4x4 tm;
-	mat4x4_translate(tm, m_parTrans[0], m_parTrans[1], m_parTrans[2]);
-
-	// Calculate local rotation matrix
-	mat4x4 rot;
-	mat4x4_identity(rot);
-	MakeLinkRotMatrixLocal(rot);
-
-	//Multiply local translation and rotation matrices
-	mat4x4_mul(tm, tm, rot);
-
-	// Multiply local transformation matrix with parent Transaformation matrix
-	mat4x4_mul(m_LToWTrans, parTM, tm);
+	
 
 	// Recurse over children
-	for (int i = 0; i < KL_MAX_CHILDREN; i++) {
-		if (m_children[i])
-		{	
-			m_children[i]->UpdateAndRecurse(pSkel);
-		}
+	for (int i = 0; i < m_numChildren; i++) {
+		m_children[i]->UpdateAndRecurse(pSkel);
 	}
 }
 
@@ -243,7 +245,14 @@ void Link::CalcVertexLocations(int maxEntries, int* curLocation, VERTEX** outCoo
 
 
 	mat4x4 tm;
-	GetLToWTransMat(tm);
+
+	if(m_parNde == NULL) {
+		mat4x4_translate(tm, m_parTrans[0], m_parTrans[1], m_parTrans[2]);
+	} else {
+		m_parNde->GetLToWTransMat(tm);
+	}
+
+	
 	//TO DO: figure out the correct transformation
 	
 
@@ -260,11 +269,8 @@ void Link::CalcVertexLocations(int maxEntries, int* curLocation, VERTEX** outCoo
 
 
 	//TO DO:  Add some more code...
-	for (int i = 0; i < KL_MAX_CHILDREN; i++) {
-		if (m_children[i])
-		{
-			m_children[i]->CalcVertexLocations(maxEntries, curLocation, outCoords);
-		}
+	for (int i = 0; i < m_numChildren; i++) {
+		m_children[i]->CalcVertexLocations(maxEntries, curLocation, outCoords);
 	}
 	
 }
