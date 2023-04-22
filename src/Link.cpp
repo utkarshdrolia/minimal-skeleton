@@ -193,17 +193,19 @@ void Link::GetLToWTransMat(mat4x4 m)
 void Link::UpdateAndRecurse(Skeleton* pSkel)
 {
 	// Calculate the local translation matrix from joint state data
-	mat4x4 parTM;
+
+
+	mat4x4 parTransformMat;
 	if (m_parNde == NULL) {
-		mat4x4_identity(parTM);
+		// Calculate and store translation matrix for root in m_LToWTrans
 		mat4x4_translate(m_LToWTrans, m_parTrans[0], m_parTrans[1], m_parTrans[2]);
 	} else {
-		//Parent Transaltion in parTM
-		mat4x4_dup(parTM, m_parNde->m_LToWTrans);
+		// Parent Transaformation in parTransformMat
+		mat4x4_dup(parTransformMat, m_parNde->m_LToWTrans);
 
 		// Calculate local translation matrix
-		mat4x4 localTranslationMat;
-		mat4x4_translate(localTranslationMat, m_parTrans[0], m_parTrans[1], m_parTrans[2]);
+		mat4x4 localTranslatMat;
+		mat4x4_translate(localTranslatMat, m_parTrans[0], m_parTrans[1], m_parTrans[2]);
 
 		// Calculate local rotation matrix
 		mat4x4 localRotMat;
@@ -211,11 +213,12 @@ void Link::UpdateAndRecurse(Skeleton* pSkel)
 		MakeLinkRotMatrixLocal(localRotMat);
 
 		//Multiply local translation and rotation matrices
-		mat4x4 transformationMatrix;
-		mat4x4_mul(transformationMatrix, localTranslationMat, localRotMat);
+		mat4x4 transformMatrix;
+		mat4x4_mul(transformMatrix, localTranslatMat, localRotMat);
 
 		// Multiply local transformation matrix with parent Transaformation matrix
-		mat4x4_mul(m_LToWTrans, parTM, transformationMatrix);
+		// Store local to world transformation matrix in m_LToWTrans
+		mat4x4_mul(m_LToWTrans, parTransformMat, transformMatrix);
 	}
 	
 
@@ -242,19 +245,15 @@ void Link::CalcVertexLocations(int maxEntries, int* curLocation, VERTEX** outCoo
 		
 	}
 
-
-
+	//TO DO: figure out the correct transformation
+	
 	mat4x4 tm;
 
 	if(m_parNde == NULL) {
-		mat4x4_translate(tm, m_parTrans[0], m_parTrans[1], m_parTrans[2]);
+		GetLToWTransMat(tm);
 	} else {
 		m_parNde->GetLToWTransMat(tm);
 	}
-
-	
-	//TO DO: figure out the correct transformation
-	
 
 	//Apply it to all the vertices in the pyramid
 	for (int i = 0; i < 12; i++)
@@ -267,12 +266,10 @@ void Link::CalcVertexLocations(int maxEntries, int* curLocation, VERTEX** outCoo
 	}
 	*curLocation += 12;
 
-
 	//TO DO:  Add some more code...
 	for (int i = 0; i < m_numChildren; i++) {
 		m_children[i]->CalcVertexLocations(maxEntries, curLocation, outCoords);
 	}
-	
 }
 
 void Link::CalcParentGeomAndRecurse()
@@ -507,6 +504,8 @@ void Link::CalcQuatToAlignWithVector(float baseVec[], float targetVec[], float q
 void Link::MakeLinkRotMatrixLocal(mat4x4 rot)
 {
 	//To add
+
+	// Applying X, Y, Z rotations to rot based on the order in m_axisOrder
 	for(int i = 0; i < m_jointTypeToNumRotations[m_jointType]; i++) {
 		switch (m_axisOrder[i])
 		{

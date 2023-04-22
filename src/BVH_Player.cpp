@@ -172,7 +172,7 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         mat4x4_identity(m);
-        mat4x4_scale(m, m, 0.6);
+        mat4x4_scale(m, m, 0.9);
         m[3][3] = 1.0;
 
 
